@@ -29,7 +29,7 @@ import { Resolver } from 'did-resolver'
 import { getResolver as getEthrDidResolver } from 'ethr-did-resolver'
 
 // Storage plugin
-import { DeriveKeyOpts, TypedArray } from '../encrypted-local-storage'
+import { DeriveKeyOpts, TypedArray, toCryptoKey } from '../encrypted-local-storage'
 import { LocalStorageDidStore as DidStore } from './stores/local-storage-did-store'
 import { LocalStorageKeyStore as KeyStore } from './stores/local-storage-key-store'
 import { LocalStoragePrivateKeyStore as PrivateKeyStore } from './stores/local-storage-private-key-store'
@@ -48,8 +48,9 @@ export interface AgentCreationOpts {
 
 export async function myVeramoAgent(kmsSecretKeyOrDeriveKeyOpts: CryptoKey | ArrayBufferLike | TypedArray | Buffer | JsonWebKey | DeriveKeyOpts, creationOpts?: AgentCreationOpts): Promise<MyVeramoAgent> {
   const forceOverwrite: boolean = creationOpts?.forceOverwrite ?? false
+  const cryptoKey: CryptoKey = await toCryptoKey(kmsSecretKeyOrDeriveKeyOpts)
 
-  const veramoConfigStore: VeramoConfigStore = new VeramoConfigStore('veramo-config-store', kmsSecretKeyOrDeriveKeyOpts, forceOverwrite)
+  const veramoConfigStore: VeramoConfigStore = new VeramoConfigStore('veramo-config-store', cryptoKey, forceOverwrite)
 
   let infuraProjectId: string
   try {
@@ -64,10 +65,10 @@ export async function myVeramoAgent(kmsSecretKeyOrDeriveKeyOpts: CryptoKey | Arr
   }
 
   const stores = {
-    'did-store': new DidStore('did-store', veramoConfigStore.key, forceOverwrite),
-    'key-store': new KeyStore('key-store', veramoConfigStore.key, forceOverwrite),
-    'private-key-store': new PrivateKeyStore('private-key-store', veramoConfigStore.key, forceOverwrite),
-    'vc-store': new VcStore('vc-store', veramoConfigStore.key, forceOverwrite),
+    'did-store': new DidStore('did-store', cryptoKey, forceOverwrite),
+    'key-store': new KeyStore('key-store', cryptoKey, forceOverwrite),
+    'private-key-store': new PrivateKeyStore('private-key-store', cryptoKey, forceOverwrite),
+    'vc-store': new VcStore('vc-store', cryptoKey, forceOverwrite),
     'veramo-config-store': veramoConfigStore
   }
 

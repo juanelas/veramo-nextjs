@@ -10,7 +10,7 @@ export interface DeriveKeyOpts {
 }
 export class EncryptedLocalStorage<T> {
   name: string
-  key!: CryptoKey
+  private key!: CryptoKey
   private _lock: AsyncLock
   private _atomicContext: boolean
   private _initialized: Promise<void>
@@ -32,7 +32,7 @@ export class EncryptedLocalStorage<T> {
   }
 
   private async _init(keyOrDeriveKeyOpts: CryptoKey | ArrayBufferLike | TypedArray | Buffer | JsonWebKey | DeriveKeyOpts, force: boolean) {
-    this.key = await getCryptoKey(keyOrDeriveKeyOpts)
+    this.key = await toCryptoKey(keyOrDeriveKeyOpts)
     await this._initStorage(force)
   }
 
@@ -111,7 +111,7 @@ export class EncryptedLocalStorage<T> {
   }
 }
 
-async function getCryptoKey(key: CryptoKey | ArrayBufferLike | TypedArray | Buffer | JsonWebKey | DeriveKeyOpts): Promise<CryptoKey> {
+export async function toCryptoKey(key: CryptoKey | ArrayBufferLike | TypedArray | Buffer | JsonWebKey | DeriveKeyOpts): Promise<CryptoKey> {
   const deriveKeyOpts = key as DeriveKeyOpts
 
   if (deriveKeyOpts.password !== undefined) {

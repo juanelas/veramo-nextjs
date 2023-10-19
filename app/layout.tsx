@@ -19,7 +19,7 @@ export default function RootLayout({
       },
       {
         text: 'Wallet',
-        url: '/wallet'
+        url: '/wallet/ids'
       }
     ],
     navBarType: 'horizontal-navbar'
