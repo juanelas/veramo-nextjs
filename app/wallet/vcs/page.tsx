@@ -51,7 +51,7 @@ export default function Page() {
       <div>
         <Button color="primary" onClick={importVc}>Import Verifiable Credential</Button>
         {errorMessage && (
-          <div className="text-danger p-2 border-solid border-b-2 border-danger break-words"> {errorMessage} </div>
+          <div className="bg-warning border-solid border-medium m-5 break-words"> {errorMessage} </div>
         )}
         <Textarea
           ref={textAreaRef}

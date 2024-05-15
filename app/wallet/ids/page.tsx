@@ -44,6 +44,7 @@ export default function Page() {
   } else {
     return (
       <div>
+        <div className="bg-warning border-solid border-medium m-5 break-words text-center"> Connected to {veramoAgent?.ethereumNetwork} </div>
         <Button color="primary" onClick={createIdentifier}>Create new identifier</Button>
         <DidList></DidList>
       </div>

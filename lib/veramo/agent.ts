@@ -9,7 +9,7 @@ import {
 } from '@veramo/core'
 
 // Core identity manager plugin
-import { DIDManager } from '@veramo/did-manager'
+import { AbstractIdentifierProvider, DIDManager } from '@veramo/did-manager'
 
 // Ethr did identity provider
 import { EthrDIDProvider } from '@veramo/did-provider-ethr'
@@ -39,10 +39,11 @@ import { VerifiableCredentialManager } from './verifiable-credential-manager'
 
 export type VeramoAgent = TAgent<IKeyManager & IDIDManager & IResolver & ICredentialPlugin> & { context?: Record<string, any> }
 
-export type MyVeramoAgent = VeramoAgent & { verifiableCredentialManager: VerifiableCredentialManager } & { clear: () => void } & { infuraProjectId: string }
+export type MyVeramoAgent = VeramoAgent & { verifiableCredentialManager: VerifiableCredentialManager } & { clear: () => void } & { infuraProjectId: string } & { ethereumNetwork: string }
 
 export interface AgentCreationOpts {
   infuraProjectId: string
+  network: string
   forceOverwrite?: boolean
 }
 
@@ -53,14 +54,17 @@ export async function myVeramoAgent(kmsSecretKeyOrDeriveKeyOpts: CryptoKey | Arr
   const veramoConfigStore: VeramoConfigStore = new VeramoConfigStore('veramo-config-store', cryptoKey, forceOverwrite)
 
   let infuraProjectId: string
+  let ethereumNetwork: string
   try {
     infuraProjectId = await veramoConfigStore.getInfuraProjectId()
+    ethereumNetwork = await veramoConfigStore.getEthereumNetwork()
   } catch (error) {
-    if (creationOpts?.infuraProjectId !== undefined) {
+    if (creationOpts?.infuraProjectId !== undefined && creationOpts?.network !== undefined) {
       infuraProjectId = creationOpts.infuraProjectId
-      await veramoConfigStore.setInfuraProjectId(infuraProjectId)
+      ethereumNetwork = creationOpts.network
+      await veramoConfigStore.setStorage({ infuraProjectId, ethereumNetwork })
     } else {
-      throw new Error('missing-infuraProjectId', { cause: 'in order to create a new agent you MUST provide an infuraProjectId' })
+      throw new Error('missing infuraProjectId or Ethereum Network', { cause: 'in order to create a new agent you MUST provide an infuraProjectId and an Ethereum network' })
     }
   }
 
@@ -72,6 +76,14 @@ export async function myVeramoAgent(kmsSecretKeyOrDeriveKeyOpts: CryptoKey | Arr
     'veramo-config-store': veramoConfigStore
   }
 
+  const defaultProvider = 'did:ethr:' + ethereumNetwork
+  const providers: Record<string, AbstractIdentifierProvider> = {}
+  providers[defaultProvider] = new EthrDIDProvider({
+    defaultKms: 'local',
+    network: ethereumNetwork,
+    rpcUrl: `https://${ethereumNetwork}.infura.io/v3/${infuraProjectId}`,
+    registry: ethereumNetwork === 'mainnet' ? '0xdca7ef03e98e0dc2b855be647c39abe984fcf21b' : '0x03d5003bf0e79c5f5223588f347eba39afbc3818'
+  })
   const _agent = createAgent<
     IKeyManager & IDIDManager & IResolver & ICredentialPlugin
   >({
@@ -84,14 +96,8 @@ export async function myVeramoAgent(kmsSecretKeyOrDeriveKeyOpts: CryptoKey | Arr
       }),
       new DIDManager({
         store: stores['did-store'],
-        defaultProvider: 'did:ethr:goerli',
-        providers: {
-          'did:ethr:goerli': new EthrDIDProvider({
-            defaultKms: 'local',
-            network: 'goerli',
-            rpcUrl: 'https://goerli.infura.io/v3/' + infuraProjectId
-          })
-        }
+        defaultProvider,
+        providers
       }),
       new DIDResolverPlugin({
         resolver: new Resolver(getEthrDidResolver({ infuraProjectId }))
@@ -109,6 +115,7 @@ export async function myVeramoAgent(kmsSecretKeyOrDeriveKeyOpts: CryptoKey | Arr
   }
 
   _agent.infuraProjectId = infuraProjectId
+  _agent.ethereumNetwork = ethereumNetwork
 
   return _agent as MyVeramoAgent
 }

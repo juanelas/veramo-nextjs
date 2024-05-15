@@ -1,13 +1,14 @@
 'use client'
 
 import { deleteVeramoAgent, loadVeramoAgent, veramoConfigInLocalStorage } from '@/lib/veramo'
-import { Button, CircularProgress, Input } from '@nextui-org/react'
+import { Button, CircularProgress, Input, Select, SelectItem } from '@nextui-org/react'
 import { Dispatch, FormEvent, SetStateAction, useEffect, useRef, useState } from 'react'
 
 export default function VeramoSetup({ setVeramoInitialized }: { setVeramoInitialized: Dispatch<SetStateAction<{ initialized: boolean }>> }) {
   const passwordRef = useRef(null)
   const passwordRepeatRef = useRef(null)
   const infuraProjectIdRef = useRef(null)
+  const networkRef = useRef(null)
 
   const [veramoConfFound, setVeramoConfFound] = useState<boolean>(false)
   const [loading, setLoading] = useState<boolean>(true)
@@ -35,6 +36,7 @@ export default function VeramoSetup({ setVeramoInitialized }: { setVeramoInitial
       const password = (passwordRef.current !== null) ? (passwordRef.current as any).value as string : ''
       const passwordRepeat = (passwordRepeatRef.current !== null) ? (passwordRepeatRef.current as any).value as string : ''
       const infuraProjectId = (infuraProjectIdRef.current !== null) ? (infuraProjectIdRef.current as any).value as string : ''
+      const network = (networkRef.current !== null) ? (networkRef.current as any).value as string : ''
 
       if (password === '') {
         throw new Error('empty-password')
@@ -48,7 +50,7 @@ export default function VeramoSetup({ setVeramoInitialized }: { setVeramoInitial
         if (passwordRepeat === undefined || passwordRepeat !== password) {
           throw new Error('password-mismatch', { cause: 'passwords do not match' })
         }
-        await loadVeramoAgent({ password, keyLength: 256 }, { infuraProjectId }).catch(err => {
+        await loadVeramoAgent({ password, keyLength: 256 }, { infuraProjectId, network }).catch(err => {
           console.error(err)
           throw new Error('veramo-setup-failed')
         })
@@ -98,6 +100,23 @@ export default function VeramoSetup({ setVeramoInitialized }: { setVeramoInitial
       <>
         <p className="text-large mb-2">Initialize your wallet</p>
         <form onSubmit={handleSubmit}>
+          <Select
+            ref={networkRef}
+            isRequired
+            label="Ethereum network"
+            placeholder="Ethereum network"
+            defaultSelectedKeys={["mainnet"]}
+            id='ethereum-network'
+            name='ethereum-network'
+            className="m-3"
+          >
+            <SelectItem key="mainnet" value="mainnet">
+              mainnet
+            </SelectItem>
+            <SelectItem key="sepolia" value="sepolia">
+              sepolia testnet
+            </SelectItem>
+          </Select>
           <Input
             ref={infuraProjectIdRef}
             isRequired

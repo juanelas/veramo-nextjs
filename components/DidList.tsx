@@ -4,6 +4,7 @@ import hash from "@/lib/hash"
 import { veramoAgent } from "@/lib/veramo"
 import { Accordion, AccordionItem, Button } from "@nextui-org/react"
 import { useState } from "react"
+import AddService from "./AddService"
 
 export default function Component() {
   const [idList, setIdlist] = useState<JSX.Element[]>([])
@@ -34,6 +35,7 @@ export default function Component() {
         return (
           <AccordionItem key={id} aria-label={title} subtitle={identifier.did} title={title} className="overflow-hidden">
             <code><pre>{JSON.stringify(didDoc?.didDocument ?? {}, undefined, 2)}</pre></code>
+            <div className="border-solid m-5 pl-3"><AddService did={identifier.did}></AddService></div>
             <Button color="danger" onClick={() => deleteIdentifier(identifier.did)}>Delete identifier</Button>
           </AccordionItem>
         )
