@@ -3,29 +3,39 @@
 import { deleteVeramoAgent, loadVeramoAgent, veramoConfigInLocalStorage } from '@/lib/veramo'
 import { Button, CircularProgress, Input, Select, SelectItem } from '@nextui-org/react'
 import { Dispatch, FormEvent, SetStateAction, useEffect, useRef, useState } from 'react'
+import { useWeb3ModalProvider, useWeb3ModalAccount, useDisconnect } from '@web3modal/ethers/react'
 
 export default function VeramoSetup({ setVeramoInitialized }: { setVeramoInitialized: Dispatch<SetStateAction<{ initialized: boolean }>> }) {
   const passwordRef = useRef(null)
   const passwordRepeatRef = useRef(null)
-  const infuraProjectIdRef = useRef(null)
-  const networkRef = useRef(null)
+
+  const { isConnected } = useWeb3ModalAccount()
+  const { disconnect } = useDisconnect()
 
   const [veramoConfFound, setVeramoConfFound] = useState<boolean>(false)
+  const [walletConnected, setWalletConnected] = useState<boolean>(isConnected)
+
   const [loading, setLoading] = useState<boolean>(true)
   const [error, setError] = useState<Error>()
 
-  async function checkForVeramoConfig() {
+  const { walletProvider } = useWeb3ModalProvider()
+
+  async function checConfig() {
+    setWalletConnected(isConnected)
     const confFound = veramoConfigInLocalStorage()
     setVeramoConfFound(confFound)
     if (loading) setLoading(false)
   }
 
+
   useEffect(() => {
-    checkForVeramoConfig()
+    checConfig()
   }, [loading, error])
 
   function handleReset() {
     deleteVeramoAgent()
+    disconnect()
+    setWalletConnected(false)
     setVeramoConfFound(false)
     setLoading(false)
   }
@@ -35,8 +45,6 @@ export default function VeramoSetup({ setVeramoInitialized }: { setVeramoInitial
     try {
       const password = (passwordRef.current !== null) ? (passwordRef.current as any).value as string : ''
       const passwordRepeat = (passwordRepeatRef.current !== null) ? (passwordRepeatRef.current as any).value as string : ''
-      const infuraProjectId = (infuraProjectIdRef.current !== null) ? (infuraProjectIdRef.current as any).value as string : ''
-      const network = (networkRef.current !== null) ? (networkRef.current as any).value as string : ''
 
       if (password === '') {
         throw new Error('empty-password')
@@ -44,17 +52,16 @@ export default function VeramoSetup({ setVeramoInitialized }: { setVeramoInitial
 
       setLoading(true)
 
-      if (infuraProjectId === '') {
-        await loadVeramoAgent({ password, keyLength: 256 })
-      } else {
-        if (passwordRepeat === undefined || passwordRepeat !== password) {
-          throw new Error('password-mismatch', { cause: 'passwords do not match' })
-        }
-        await loadVeramoAgent({ password, keyLength: 256 }, { infuraProjectId, network }).catch(err => {
-          console.error(err)
-          throw new Error('veramo-setup-failed')
-        })
+      if (!veramoConfFound && passwordRepeat !== password) {
+        throw new Error('password-mismatch', { cause: 'passwords do not match' })
       }
+
+      if ( walletProvider === undefined) {
+        throw new Error('wallet-not-connected', { cause: 'Wallet not connected, please connect one'})
+      }
+      
+      await loadVeramoAgent(walletProvider, { password, keyLength: 256 })
+
       console.info('veramo wallet succesfully initialized')
 
       setLoading(false)
@@ -72,10 +79,17 @@ export default function VeramoSetup({ setVeramoInitialized }: { setVeramoInitial
     return (
       <CircularProgress className="mx-auto scale-150 pt-5" size="lg" color="warning" aria-label="Loading..." />
     )
+  } else if (!walletConnected) {
+    return (
+      <>
+        <h2>Please connect your Web3 Wallet before proceeding:</h2>
+        <w3m-connect-button />
+      </>
+    )
   } else if (veramoConfFound) {
     return (
       <>
-        <h2>Wallet configuration found. Please input your password to use it</h2>
+        <h2>Existing wallet configuration found. Please input your password to use it</h2>
         <form onSubmit={handleSubmit}>
           <Input
             ref={passwordRef}
@@ -98,35 +112,8 @@ export default function VeramoSetup({ setVeramoInitialized }: { setVeramoInitial
   } else {
     return (
       <>
-        <p className="text-large mb-2">Initialize your wallet</p>
+        <p className="text-large mb-2">Set a password for encrypt your wallet data</p>
         <form onSubmit={handleSubmit}>
-          <Select
-            ref={networkRef}
-            isRequired
-            label="Ethereum network"
-            placeholder="Ethereum network"
-            defaultSelectedKeys={["mainnet"]}
-            id='ethereum-network'
-            name='ethereum-network'
-            className="m-3"
-          >
-            <SelectItem key="mainnet" value="mainnet">
-              mainnet
-            </SelectItem>
-            <SelectItem key="sepolia" value="sepolia">
-              sepolia testnet
-            </SelectItem>
-          </Select>
-          <Input
-            ref={infuraProjectIdRef}
-            isRequired
-            type="text"
-            label="INFURA Project ID"
-            variant='bordered'
-            id='infura-project-id'
-            name='infura-project-id'
-            className='m-3'
-          />
           <Input
             ref={passwordRef}
             isRequired

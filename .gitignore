@@ -33,3 +33,6 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# well-known/wallet-connect.txt
+public/.well-known/wallet-connect.txt

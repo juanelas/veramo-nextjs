@@ -26,20 +26,40 @@ export default function Component() {
     if (veramoAgent === undefined) {
       return []
     }
-    const identifiers = await veramoAgent.didManagerFind()
+    const accounts = await veramoAgent.provider.listAccounts()
+    const network = await veramoAgent.provider.getNetwork()
+
     return await Promise.all(
-      identifiers.map(async (identifier) => {
-        const title = identifier.alias ?? identifier.did
-        const id = await hash(identifier.did)
-        const didDoc = await veramoAgent?.resolveDid({ didUrl: identifier.did })
+      accounts.map(async (account) => {
+        const did = 'did:ethr' + (network.name !== 'mainnet' ? ':' + network.name : '') + ':' + account.address
+        const id = await hash(did)
+        const didDoc = await veramoAgent?.resolveDid({ didUrl: did })
+        if (didDoc?.didResolutionMetadata.error) {
+          throw new Error(didDoc.didResolutionMetadata.error + (didDoc.didResolutionMetadata.message ? (' : ' + didDoc.didResolutionMetadata.message) : ''))
+        }
         return (
-          <AccordionItem key={id} aria-label={title} subtitle={identifier.did} title={title} className="overflow-hidden">
+          <AccordionItem key={id} aria-label={account.address} subtitle={did} title={account.address} className="overflow-hidden">
             <code><pre>{JSON.stringify(didDoc?.didDocument ?? {}, undefined, 2)}</pre></code>
-            <div className="border-solid m-5 pl-3"><AddService did={identifier.did}></AddService></div>
-            <Button color="danger" onClick={() => deleteIdentifier(identifier.did)}>Delete identifier</Button>
+            <div className="border-solid m-5 pl-3"><AddService did={did}></AddService></div>
+            <Button color="danger" onClick={() => deleteIdentifier(did)}>Delete identifier</Button>
           </AccordionItem>
         )
       })
+      // const identifiers = await veramoAgent.didManagerFind()
+      // return await Promise.all(
+      //   identifiers.map(async (identifier) => {
+      //     const title = identifier.alias ?? identifier.did
+      //     const id = await hash(identifier.did)
+      //     const didDoc = await veramoAgent?.resolveDid({ didUrl: identifier.did })
+      //     return (
+      //       <AccordionItem key={id} aria-label={title} subtitle={identifier.did} title={title} className="overflow-hidden">
+      //         <code><pre>{JSON.stringify(didDoc?.didDocument ?? {}, undefined, 2)}</pre></code>
+      //         <div className="border-solid m-5 pl-3"><AddService did={identifier.did}></AddService></div>
+      //         <Button color="danger" onClick={() => deleteIdentifier(identifier.did)}>Delete identifier</Button>
+      //       </AccordionItem>
+      //     )
+      //   })
+      // )
     )
   }
 
@@ -48,7 +68,7 @@ export default function Component() {
       setIdlist(newIdList)
     }
   }).catch(error => {
-    setErrorMessage((error as Error).message + '. ' + (error as Error).cause ?? '')
+    setErrorMessage((error as Error).message + '. ' + ((error as Error).cause ?? ''))
     console.log(error)
   })
 
