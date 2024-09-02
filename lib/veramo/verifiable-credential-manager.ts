@@ -1,4 +1,4 @@
-import type { ICredentialPlugin, TAgent, VerifiableCredential as W3cVerifiableCredential } from "@veramo/core"
+import type { CredentialSubject, ICredentialPlugin, TAgent, VerifiableCredential as W3cVerifiableCredential } from "@veramo/core"
 import type { VcStore, VcStoreFilter, VerifiableCredential } from "./stores/local-storage-vc-store"
 
 export class VerifiableCredentialManager {
@@ -66,5 +66,27 @@ export class VerifiableCredentialManager {
       const filter = getByIdOrFilter as VcStoreFilter
       return this.store.listVCs(filter)
     }
+  }
+
+  async issueCredential(issuerDid: string, credentialSubject: CredentialSubject) {
+    const regex = /^did:ethr:(?:([a-z0-9]+):)?(.+)$/
+    const issuerData = issuerDid.match(regex)
+    if (issuerData === null) {
+      throw new Error('invalid did ' + issuerDid)
+    }
+    const verifiableCredential = await this.agent.createVerifiableCredential({
+      credential: {
+        issuer: { id: issuerDid },
+        credentialSubject
+      },
+      proofFormat: 'EthereumEip712Signature2021',
+      // proofFormat: 'jwt',
+      keyRef: issuerData[2] // issuer eth address
+    })
+    await this.agent.dataStoreSaveVerifiableCredential({ verifiableCredential })
+    console.log('New credential created')
+    console.log(JSON.stringify(verifiableCredential, null, 2))
+    console.log('----- ONE-LINE EXPORT -----')
+    console.log(JSON.stringify(verifiableCredential))
   }
 }

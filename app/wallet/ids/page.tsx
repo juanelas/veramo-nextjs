@@ -26,7 +26,7 @@ export default function Page() {
         }
         countRef.current = count + 1
       }
-      await veramoAgent.didManagerCreate({ alias: aliasPrefix + String(countRef.current) })
+      await veramoAgent.didManagerCreate({ alias: aliasPrefix + String(countRef.current), kms: 'eip1193' })
       countRef.current = countRef.current + 1
       setLoading(false)
     }

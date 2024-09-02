@@ -22,6 +22,8 @@ import { Web3KeyManagementSystem } from '@veramo/kms-web3'
 
 // W3C Verifiable Credential plugin
 import { CredentialPlugin } from '@veramo/credential-w3c'
+// Eip712Signature plugin
+import { CredentialIssuerEIP712 } from '@veramo/credential-eip712'
 
 // Custom resolvers
 import { DIDResolverPlugin } from '@veramo/did-resolver'
@@ -103,7 +105,8 @@ export async function myVeramoAgent(walletProvider: Eip1193Provider, kmsSecretKe
           }
         ] }))
       }),
-      new CredentialPlugin()
+      new CredentialPlugin(),
+      new CredentialIssuerEIP712()
     ]
   }) as Partial<MyVeramoAgent> & VeramoAgent
 

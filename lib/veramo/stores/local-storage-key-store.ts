@@ -16,18 +16,18 @@ export class LocalStorageKeyStore extends EncryptedLocalStorage<KeyStorage> impl
       if (key.kms === undefined) {
         throw new Error('no kms')
       }
-      if (key.meta === undefined) {
-        throw new Error('no meta')
-      }
-      if (key.privateKeyHex !== undefined) {
-        throw new Error('privateKeyHex on the key!')
-      }
+      // if (key.meta === undefined) {
+      //   throw new Error('no meta')
+      // }
+      // if (key.privateKeyHex !== undefined) {
+      //   throw new Error('privateKeyHex on the key!')
+      // }
       if (key.publicKeyHex === undefined) {
         throw new Error('no publicKeyHex')
       }
-      if (key.type === undefined) {
-        throw new Error('no type')
-      }
+      // if (key.type === undefined) {
+      //   throw new Error('no type')
+      // }
     } catch (error) {
       console.error(error)
       return false

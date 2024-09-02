@@ -31,9 +31,21 @@ export default function Component() {
 
     return await Promise.all(
       accounts.map(async (account) => {
-        const did = 'did:ethr' + (network.name !== 'mainnet' ? ':' + network.name : '') + ':' + account.address
+        const provider = 'did:ethr' + (network.name !== 'mainnet' ? ':' + network.name : '')
+        const identities = await veramoAgent?.didManagerFind()
+        console.log(identities)
+        // veramoAgent?.didManagerCreate({kms: 'eip1193', provider, options: { kid: account.address }})
+        const did = provider + ':' + account.address
         const id = await hash(did)
         const didDoc = await veramoAgent?.resolveDid({ didUrl: did })
+        veramoAgent?.didManagerImport({ did, keys: [{
+          kid: account.address,
+          kms: 'eip1193',
+          publicKeyHex: account.address,
+          // @ts-ignore
+          type: 'EthereumEip712Signature2021'
+        }], provider })
+        console.log(identities)
         if (didDoc?.didResolutionMetadata.error) {
           throw new Error(didDoc.didResolutionMetadata.error + (didDoc.didResolutionMetadata.message ? (' : ' + didDoc.didResolutionMetadata.message) : ''))
         }

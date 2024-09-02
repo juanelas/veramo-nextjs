@@ -1,5 +1,6 @@
 'use client'
 
+import DidList from '@/components/DidList'
 import VcList from "@/components/VcList"
 import VeramoSetup from "@/components/VeramoSetup"
 import { veramoAgent } from "@/lib/veramo"
@@ -40,6 +41,36 @@ export default function Page() {
       }
     }
   }
+  async function createVc() {
+    if (veramoAgent !== undefined) {
+      try {
+        const accounts = await veramoAgent.provider.listAccounts()
+        const network = await veramoAgent.provider.getNetwork()
+        if (accounts.length === 0) {
+          throw new Error('No managed DIDs')
+        }
+        // const issuerDid = 'did:ethr' + (network.name !== 'mainnet' ? ':' + network.name : '') + ':' + accounts[0].address
+        const provider = 'did:ethr' + (network.name !== 'mainnet' ? ':' + network.name : '')
+        const issuerDid = provider+ ':' + accounts[0].address
+        await veramoAgent.verifiableCredentialManager.issueCredential(issuerDid, {
+          id: 'did:ethr:sepolia:0x034541f4895326772811828773e44d43dfca94e78a387080a7bad643c27d32ebd7',
+          alumni: true
+        })
+        
+        setErrorMessage('')
+        setVeramoInitialized({
+          initialized: true
+        }) // force rerendering
+      } catch (error) {
+        let errMsg = (error as Error).message
+        if ((error as Error).cause !== undefined) errMsg += '. ' + (error as Error).cause
+        setErrorMessage(errMsg)
+        console.error(error)
+      }
+    } else {
+      setErrorMessage('Veramo agent not initialized')
+    }
+  }
 
   if (!veramoInitialized.initialized) {
     return (
@@ -49,6 +80,7 @@ export default function Page() {
   else {
     return (
       <div>
+        <Button color="primary" onClick={createVc}>Create a Verifiable Credential</Button>
         <Button color="primary" onClick={importVc}>Import Verifiable Credential</Button>
         {errorMessage && (
           <div className="bg-warning border-solid border-medium m-5 break-words"> {errorMessage} </div>
