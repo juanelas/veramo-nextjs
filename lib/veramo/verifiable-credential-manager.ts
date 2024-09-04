@@ -74,16 +74,21 @@ export class VerifiableCredentialManager {
     if (issuerData === null) {
       throw new Error('invalid did ' + issuerDid)
     }
+
+    const domain = {
+      chainId: 11155111
+    }
     const verifiableCredential = await this.agent.createVerifiableCredential({
       credential: {
         issuer: { id: issuerDid },
+        domain,
         credentialSubject
       },
       proofFormat: 'EthereumEip712Signature2021',
       // proofFormat: 'jwt',
-      keyRef: issuerData[2] // issuer eth address
+      keyRef: 'eip1193-' + issuerData[2] // issuer eth address
     })
-    await this.agent.dataStoreSaveVerifiableCredential({ verifiableCredential })
+    // await this.agent.dataStoreSaveVerifiableCredential({ verifiableCredential })
     console.log('New credential created')
     console.log(JSON.stringify(verifiableCredential, null, 2))
     console.log('----- ONE-LINE EXPORT -----')

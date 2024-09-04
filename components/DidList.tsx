@@ -39,7 +39,7 @@ export default function Component() {
         const id = await hash(did)
         const didDoc = await veramoAgent?.resolveDid({ didUrl: did })
         veramoAgent?.didManagerImport({ did, keys: [{
-          kid: account.address,
+          kid: 'eip1193-' + account.address,
           kms: 'eip1193',
           publicKeyHex: account.address,
           // @ts-ignore

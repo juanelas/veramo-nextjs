@@ -23,7 +23,8 @@ import { Web3KeyManagementSystem } from '@veramo/kms-web3'
 // W3C Verifiable Credential plugin
 import { CredentialPlugin } from '@veramo/credential-w3c'
 // Eip712Signature plugin
-import { CredentialIssuerEIP712 } from '@veramo/credential-eip712'
+// import { CredentialIssuerEIP712 } from '@veramo/credential-eip712'
+
 
 // Custom resolvers
 import { DIDResolverPlugin } from '@veramo/did-resolver'
@@ -39,6 +40,12 @@ import { VerifiableCredentialManager } from './verifiable-credential-manager'
 
 // Ethers
 import { BrowserProvider, Eip1193Provider } from 'ethers'
+
+// Register the eth_typèddata signer fior did-jwt
+import { AddSigningAlgorithm, AddVerifierAlgorithm } from 'did-jwt'
+import { verifyEthTypedDataSignature, validSignatures, EthTypedDataSignerAlgorithm } from 'did-jwt-eth-typed-data-signature'
+AddSigningAlgorithm('eth_signTypedData', EthTypedDataSignerAlgorithm())
+AddVerifierAlgorithm('eth_signTypedData', verifyEthTypedDataSignature, validSignatures)
 
 export type VeramoAgent = TAgent<IKeyManager & IDIDManager & IResolver & ICredentialPlugin> & { context?: Record<string, any> }
 
@@ -105,8 +112,8 @@ export async function myVeramoAgent(walletProvider: Eip1193Provider, kmsSecretKe
           }
         ] }))
       }),
-      new CredentialPlugin(),
-      new CredentialIssuerEIP712()
+      new CredentialPlugin()
+      // new CredentialIssuerEIP712()
     ]
   }) as Partial<MyVeramoAgent> & VeramoAgent
 
